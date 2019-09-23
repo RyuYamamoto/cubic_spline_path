@@ -19,9 +19,11 @@ private:
     void _draw_line();
 
     ros::NodeHandle _nh;
+    ros::Publisher _waypoint_marker_pub;
     ros::Publisher _path_pub;
     geometry_msgs::Pose _waypoint_list;
     std::vector<double> _waypoint_x, _waypoint_y;
+    std::vector<double> _spline_path_x, _spline_path_y;
 
     double _sampling_rate;
     std::string _waypoint_filename;
