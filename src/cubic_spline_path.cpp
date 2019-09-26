@@ -9,6 +9,7 @@ CubicSplinePath::CubicSplinePath(ros::NodeHandle nh)
 
 	// yamlファイルを読み込みwaypoint情報を格納する
 	_waypoint_list = _load_waypoint();
+	std::vector<double> _waypoint_x, _waypoint_y;
 	// x, yそれぞれ分けて格納する
 	for(auto i : _waypoint_list)
 	{
@@ -17,19 +18,20 @@ CubicSplinePath::CubicSplinePath(ros::NodeHandle nh)
 	}
 	
 	_waypoint_marker_pub = _nh.advertise<visualization_msgs::MarkerArray>("/waypoint", 10, true);
+	_path_pub = _nh.advertise<nav_msgs::Path>("/spline_path", 10, true);
 
-	/*
 	cubic_spline = new CubicSpline(0.01);
 	cubic_spline->init(_waypoint_y);
 
+	std::vector<double> _spline_path_x, _spline_path_y;
 	// cubic splineによる補間を実行
-	for(double i=_waypoint_x.front(); i<=_waypoint_x.back();i+_sampling_rate)
+	for(double i=_waypoint_x.front(); i<=_waypoint_x.back(); i+=_sampling_rate)
 	{
 		_spline_path_x.push_back(i);
 		_spline_path_y.push_back(cubic_spline->calc(i));
 	}
-	*/
 	_draw_marker(_waypoint_list);
+	_draw_line(_spline_path_x, _spline_path_y);
 }
 
 // waypointを読み込む
@@ -95,7 +97,18 @@ void CubicSplinePath::_draw_marker(std::vector<geometry_msgs::Pose> waypoint_lis
 }
 
 // スプライン補間された経路を描画
-void CubicSplinePath::_draw_line()
+void CubicSplinePath::_draw_line(std::vector<double> path_x, std::vector<double> path_y)
 {
-
+	nav_msgs::Path path;
+	std::vector<geometry_msgs::PoseStamped> poses(path_x.size());
+	for(std::size_t i=0;i<path_x.size();i++)
+	{
+		geometry_msgs::PoseStamped pose;
+		pose.pose.position.x = path_x[i];
+		pose.pose.position.y = path_y[i];
+		path.poses.push_back(pose);
+	}
+	path.header.frame_id = "map";
+	path.header.stamp = ros::Time();
+	_path_pub.publish(path);
 }
