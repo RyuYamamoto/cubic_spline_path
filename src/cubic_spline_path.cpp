@@ -12,21 +12,23 @@ CubicSplinePath::CubicSplinePath(ros::NodeHandle nh)
 	// x, yそれぞれ分けて格納する
 	for(auto i : _waypoint_list)
 	{
-		_waypoint_x.push_back(i.x);
-		_waypoint_y.push_back(i.y);
+		_waypoint_x.push_back(i.position.x);
+		_waypoint_y.push_back(i.position.y);
 	}
 	
 	_waypoint_marker_pub = _nh.advertise<visualization_msgs::MarkerArray>("/waypoint", 10, true);
 
+	/*
 	cubic_spline = new CubicSpline(0.01);
 	cubic_spline->init(_waypoint_y);
 
 	// cubic splineによる補間を実行
-	for(double i=_waypoint_x.front(); i<=_waypoint_x.back();i+cubic_spline->_sampling_rate)
+	for(double i=_waypoint_x.front(); i<=_waypoint_x.back();i+_sampling_rate)
 	{
 		_spline_path_x.push_back(i);
 		_spline_path_y.push_back(cubic_spline->calc(i));
 	}
+	*/
 	_draw_marker(_waypoint_list);
 }
 
@@ -43,14 +45,14 @@ std::vector<geometry_msgs::Pose> CubicSplinePath::_load_waypoint()
 	YAML::Node node;
 	node = YAML::Load(ifs);
 	const YAML::Node &wp_node_temp = node["waypoints"];
-	const YAML::Node &wp_node = wp_node_temp ? &wp_node_temp : NULL;
+	const YAML::Node *wp_node = wp_node_temp ? &wp_node_temp : NULL;
 	if(wp_node != NULL) {
 		for(int index=0;index<wp_node->size();index++) {
 			geometry_msgs::Pose waypoint;
 			waypoint.position.x = (*wp_node)[index]["position"]["x"].as<double>();
 			waypoint.position.y = (*wp_node)[index]["position"]["y"].as<double>();
 			tf2::Quaternion quat;
-			quat::setRPY(0.0, 0.0, (*wp_node)[index]["position"]["yaw"].as<double>());
+			quat.setRPY(0.0, 0.0, (*wp_node)[index]["position"]["yaw"].as<double>());
 			waypoint.orientation.w = quat.w();
 			waypoint.orientation.x = quat.x();
 			waypoint.orientation.y = quat.y();
@@ -64,7 +66,7 @@ std::vector<geometry_msgs::Pose> CubicSplinePath::_load_waypoint()
 // waypointを描画
 void CubicSplinePath::_draw_marker(std::vector<geometry_msgs::Pose> waypoint_list)
 {
-	visualization_msgs::MarkerArrat marker_list;
+	visualization_msgs::MarkerArray marker_list;
 	visualization_msgs::Marker marker;
 
 	int id=0;
@@ -79,12 +81,12 @@ void CubicSplinePath::_draw_marker(std::vector<geometry_msgs::Pose> waypoint_lis
 		marker.scale.y = 0.3;
 		marker.scale.z = 0.3;
 		marker.color.a = 1.0;
-		marker.color.x = 1.0;
-		marker.color.y = 1.0;
-		marker.color.z = 1.0;
+		marker.color.r = 1.0;
+		marker.color.g = 1.0;
+		marker.color.b = 1.0;
 		marker.ns = "waypoint";
-		makrer.type = visualization_msgs::Marker::CUBE;
-		marker.action =~ visualization_msgs::Marker::ADD;
+		marker.type = visualization_msgs::Marker::CUBE;
+		marker.action = visualization_msgs::Marker::ADD;
 		marker.pose = waypoint_list[id];
 		marker_list.markers.push_back(marker);
 		id++;

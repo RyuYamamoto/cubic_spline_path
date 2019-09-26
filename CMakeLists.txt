@@ -18,10 +18,11 @@ catkin_package(
 
 include_directories(
   include
-  ${caktin_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
 )
 
 add_executable(cubic_spline_path_node src/cubic_spline_path_node.cpp src/cubic_spline_path.cpp)
 target_link_libraries(cubic_spline_path_node
+  yaml-cpp
   ${catkin_LIBRARIES}
 )
