@@ -1,1 +1,3 @@
-# cubic_spline_path
+## cubic_spline_path
+
+[rviz](img/rviz.png)
