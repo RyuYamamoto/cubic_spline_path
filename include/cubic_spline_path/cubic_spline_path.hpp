@@ -9,10 +9,12 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
+#include <interactive_markers/interactive_marker_server.h>
 #include <yaml-cpp/yaml.h>
 #include <cubic_spline_path/cubic_spline.hpp>
 
-class CubicSplinePath {
+class CubicSplinePath
+{
 public:
     CubicSplinePath(ros::NodeHandle nh);
     ~CubicSplinePath(){}
@@ -20,14 +22,16 @@ public:
 private:
     std::vector<geometry_msgs::Pose> _load_waypoint();
     void _draw_marker(std::vector<geometry_msgs::Pose> waypoint_list);
-    void _draw_line();
+	void _draw_handler(std::vector<geometry_msgs::Pose> waypoint_list);
+    void _draw_line(std::vector<double> path_x, std::vector<double> path_y);
+	void process_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
 
     ros::NodeHandle _nh;
     ros::Publisher _waypoint_marker_pub;
     ros::Publisher _path_pub;
     std::vector<geometry_msgs::Pose> _waypoint_list;
-    std::vector<double> _waypoint_x, _waypoint_y;
-    std::vector<double> _spline_path_x, _spline_path_y;
+	
+	boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server;
 
     double _sampling_rate;
     std::string _waypoint_filename;

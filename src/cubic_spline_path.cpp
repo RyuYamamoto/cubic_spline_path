@@ -30,8 +30,40 @@ CubicSplinePath::CubicSplinePath(ros::NodeHandle nh)
 		_spline_path_x.push_back(i);
 		_spline_path_y.push_back(cubic_spline->calc(i));
 	}
+	server.reset(new interactive_markers::InteractiveMarkerServer("interactive_tf"));
 	_draw_marker(_waypoint_list);
+	_draw_handler(_waypoint_list);
 	_draw_line(_spline_path_x, _spline_path_y);
+	server->applyChanges();
+}
+
+void CubicSplinePath::process_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+{
+	switch(feedback->event_type)
+	{
+		case visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE:
+		{
+			int index=std::stoi(feedback->marker_name);
+			_waypoint_list[index].position = feedback->pose.position;
+			_waypoint_list[index].orientation = feedback->pose.orientation;
+			std::vector<double> _waypoint_x, _waypoint_y;
+			for(auto i : _waypoint_list)
+			{
+				_waypoint_x.push_back(i.position.x);
+				_waypoint_y.push_back(i.position.y);
+			}
+			cubic_spline->init(_waypoint_y);
+			std::vector<double> _spline_path_x, _spline_path_y;
+			for(double i=_waypoint_x.front(); i<=_waypoint_x.back(); i+=_sampling_rate)
+			{
+				_spline_path_x.push_back(i);
+				_spline_path_y.push_back(cubic_spline->calc(i));
+			}
+			_draw_marker(_waypoint_list);
+			_draw_line(_spline_path_x, _spline_path_y);
+			break;
+		}
+	}
 }
 
 // waypointを読み込む
@@ -94,6 +126,42 @@ void CubicSplinePath::_draw_marker(std::vector<geometry_msgs::Pose> waypoint_lis
 		id++;
 	}
 	_waypoint_marker_pub.publish(marker_list);
+}
+
+// インタラクティブマーカーを描画
+void CubicSplinePath::_draw_handler(std::vector<geometry_msgs::Pose> waypoint_list)
+{
+	for(std::size_t index=0;index<waypoint_list.size();index++)
+	{
+		visualization_msgs::InteractiveMarker marker;
+		marker.header.frame_id = "map";
+		marker.pose.position = waypoint_list[index].position;
+
+		geometry_msgs::Pose pose = waypoint_list[index];
+		marker.pose.orientation.w = pose.orientation.w;
+		marker.pose.orientation.x = pose.orientation.x;
+		marker.pose.orientation.y = pose.orientation.y;
+		marker.pose.orientation.z = pose.orientation.z;
+
+		marker.scale = 0.5;
+		marker.name = std::to_string(index);
+		marker.description = "handle_No."+std::to_string(index);
+
+		tf2::Quaternion quat;
+		visualization_msgs::InteractiveMarkerControl control;
+
+		control.name = "move_y";
+		quat.setRPY(0.0,0,M_PI/2);
+		control.orientation.w = quat.w();
+		control.orientation.x = quat.x();
+		control.orientation.y = quat.y();
+		control.orientation.z = quat.z();
+		control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+		marker.controls.push_back(control);
+
+		server->insert(marker);
+		server->setCallback(marker.name, boost::bind(&CubicSplinePath::process_feedback, this, _1));
+	}
 }
 
 // スプライン補間された経路を描画

@@ -25,6 +25,12 @@ class CubicSpline
 		}
 		void init(std::vector<double> y)
 		{
+			a.clear();
+			b.clear();
+			c.clear();
+			d.clear();
+			w.clear();
+
 			this->ndata = y.size() - 1;
 
 			for(std::size_t i=0;i<=ndata;i++)
