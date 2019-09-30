@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   geometry_msgs
   visualization_msgs
+  interactive_markers
 )
 
 catkin_package(
